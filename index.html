@@ -161,6 +161,25 @@ input[type=range]{width:96px; accent-color:var(--gold);}
 #domSeg{margin:14px 0 4px; flex-wrap:wrap;}
 #domSeg button{flex:1;}
 .askCard .btnrow{justify-content:center;}
+/* —— AI 设置浮层 —— */
+#aiOverlay{position:fixed; inset:0; z-index:11; display:none; place-items:center;
+  background:rgba(2,4,9,.72); backdrop-filter:blur(8px);}
+#aiOverlay.open{display:grid;}
+.aiCard{width:min(520px,92vw); max-height:90vh; overflow:auto;}
+.aiFields{display:grid; gap:13px; margin:18px 0;}
+.aiField{display:grid; gap:6px;}
+.aiField label{font-size:11px; letter-spacing:.18em; color:var(--ink-soft);}
+.aiField input,.aiField select{width:100%; min-height:42px; padding:9px 12px; color:var(--ink);
+  font:inherit; font-size:14px; letter-spacing:0; background:rgba(212,176,106,.05);
+  border:1px solid var(--hair); border-radius:4px; outline:none;}
+.aiField input:focus,.aiField select:focus{border-color:var(--gold-dim);}
+.aiField select{color-scheme:dark;}
+.aiField input::placeholder{color:rgba(231,221,196,.3);}
+.aiLocal{display:none; padding:13px 14px; border-left:2px solid var(--verm);
+  background:rgba(196,84,58,.07); color:var(--ink); font-size:13px; line-height:1.8;}
+.aiLocal.on{display:block;}
+.aiSecurity{font-size:11px; line-height:1.7; color:var(--ink-soft); margin:-2px 0 14px;}
+.aiCard .btnrow{justify-content:center; flex-wrap:wrap;}
 /* —— 海报浮层 —— */
 #posterOverlay{position:fixed; inset:0; z-index:10; display:none; place-items:center;
   background:rgba(2,4,9,.78); backdrop-filter:blur(8px);}
@@ -183,6 +202,7 @@ input[type=range]{width:96px; accent-color:var(--gold);}
   #castBtn{font-size:13px; padding:7px 14px; letter-spacing:.22em; text-indent:.22em;}
   #genesisBtn,#manualBtn,#sndBtn{font-size:11px; padding:6px 8px; letter-spacing:.1em;}
   .askCard{padding:22px 18px 18px;}
+  .aiCard{max-height:86vh;}
   #domSeg button{padding:6px 4px;}
   .bigname .nm{font-size:24px;} .bigname .glyph{font-size:36px;}
   #genesisCaption{top:11%;}
@@ -248,6 +268,46 @@ input[type=range]{width:96px; accent-color:var(--gold);}
     <div class="btnrow">
       <button class="pri" id="askGo">凝神 · 起卦</button>
       <button class="sec" id="askCancel">返回</button>
+    </div>
+  </div>
+</div>
+
+<div id="aiOverlay">
+  <div class="askCard aiCard" role="dialog" aria-modal="true" aria-labelledby="aiSettingsTitle">
+    <div class="askTitle" id="aiSettingsTitle">AI 设 置</div>
+    <div class="askSub">选择本地 CLI 或绑定自己的模型服务</div>
+    <div class="aiFields">
+      <div class="aiField">
+        <label for="aiProviderSelect">模型服务</label>
+        <select id="aiProviderSelect">
+          <option value="grokcli">Grok CLI · 本机登录</option>
+          <option value="anthropic">Claude · Anthropic</option>
+          <option value="openai">GPT · OpenAI</option>
+          <option value="gemini">Gemini · Google</option>
+          <option value="kimi">Kimi · Moonshot AI</option>
+          <option value="minimax">MiniMax</option>
+          <option value="custom">OpenAI 兼容服务</option>
+        </select>
+      </div>
+      <div id="aiLocalInfo" class="aiLocal">复用本机已安装并登录的 Grok CLI，不需要在应用中填写 API Key。可通过 <b>GROK_BIN</b> 和 <b>GROK_MODEL</b> 指定命令与模型。</div>
+      <div class="aiField aiCloudField" id="aiModelField">
+        <label for="aiModelInput">模型名称</label>
+        <input id="aiModelInput" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="aiField aiCloudField" id="aiBaseField">
+        <label for="aiBaseInput">API Base URL</label>
+        <input id="aiBaseInput" type="url" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="aiField aiCloudField" id="aiKeyField">
+        <label for="aiKeyInput">API Key</label>
+        <input id="aiKeyInput" type="password" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+    <p class="aiSecurity" id="aiSecurity">API Key 仅保存在当前设备；请求直接发送至所选模型服务。请勿在公用设备保存密钥。</p>
+    <div class="btnrow">
+      <button class="pri" id="aiSave">保存设置</button>
+      <button class="sec" id="aiClear">清除 Key</button>
+      <button class="sec" id="aiCancel">返回</button>
     </div>
   </div>
 </div>
@@ -1841,7 +1901,7 @@ function resultHTML(r, vals){
    ${sectHTML("经","卦 辞",`<p>${esc(GUACI[r.ben.no])}</p>`+(r.changed?`<p class="sub">之卦「${r.zhi.name}」：${esc(GUACI[r.zhi.no])}</p>`:""))}
    ${sectHTML("经","动 爻",movingTxt)}
    ${decisionHTML(r, vals)}
-   ${sectHTML("智","AI 深 解",`<div id="aiOut"><p class="sub">结合你的问题与完整卦象，由 AI 给出个性化解读（本地可用 Grok CLI，亦可自备 Claude / GPT / Gemini Key）。</p></div>
+   ${sectHTML("智","AI 深 解",`<div id="aiOut"><p class="sub">结合你的问题与完整卦象，由 AI 给出个性化解读（本地可用 Grok CLI，亦可绑定 Claude / GPT / Gemini / Kimi / MiniMax 或其他 OpenAI 兼容模型）。</p></div>
      <div class="btnrow" style="margin-top:10px"><button class="sec" id="aiBtn">✦ AI 深解（${(AI_PROVIDERS[aiProvider()]||{}).name||"Claude"}）</button><button class="sec" id="aiCfg" title="AI 设置">⚙</button><button class="sec" id="posterBtn">生成海报</button></div>`)}
    <div class="btnrow"><button class="pri" id="againBtn">归元 · 再占</button><button class="sec" id="toManual">手动排卦</button></div>`;
 }
@@ -1921,10 +1981,14 @@ document.getElementById("askGo").onclick = askSubmit;
 document.getElementById("askCancel").onclick = closeAsk;
 askInput.addEventListener("keydown", e=>{ if(e.key==="Enter") askSubmit(); });
 addEventListener("keydown", e=>{
-  if(e.key==="Escape"){ closeAsk(); document.getElementById("posterOverlay").classList.remove("open"); }
+  if(e.key==="Escape"){
+    closeAsk();
+    document.getElementById("aiOverlay").classList.remove("open");
+    document.getElementById("posterOverlay").classList.remove("open");
+  }
 });
 
-/* —— AI 深解（本地 Grok CLI / Anthropic / OpenAI / Gemini）—— */
+/* —— AI 深解（本地 Grok CLI / 自备云模型 Key）—— */
 const AI_PROVIDERS = {
   grokcli: {
     name:"Grok CLI", requiresKey:false,
@@ -1940,48 +2004,56 @@ const AI_PROVIDERS = {
     },
   },
   anthropic: {
-    name:"Claude", keyHint:"sk-ant-…",
-    model: ()=> localStorage.getItem("yi_model_anthropic") || "claude-sonnet-4-6",
+    name:"Claude", keyHint:"sk-ant-…", defaultModel:"claude-sonnet-4-6",
+    defaultBase:"https://api.anthropic.com/v1",
     async call(key, prompt){
-      const resp = await fetch("https://api.anthropic.com/v1/messages",{
+      const base = aiBaseName("anthropic").replace(/\/$/,"");
+      const url = /\/messages$/.test(base)? base : base+"/messages";
+      const d = await fetchAIJson(url,{
         method:"POST",
         headers:{"content-type":"application/json","x-api-key":key,
           "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:this.model(), max_tokens:800, messages:[{role:"user",content:prompt}]}),
+        body:JSON.stringify({model:aiModelName("anthropic"), max_tokens:800, messages:[{role:"user",content:prompt}]}),
       });
-      if(!resp.ok) throw {status:resp.status};
-      const d = await resp.json();
       return (d.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("\n");
     },
   },
   openai: {
-    name:"GPT", keyHint:"sk-…",
-    model: ()=> localStorage.getItem("yi_model_openai") || "gpt-4o-mini",
+    name:"GPT", keyHint:"sk-…", defaultModel:"gpt-4o-mini",
+    defaultBase:"https://api.openai.com/v1",
     async call(key, prompt){
-      const resp = await fetch("https://api.openai.com/v1/chat/completions",{
-        method:"POST",
-        headers:{"content-type":"application/json","authorization":"Bearer "+key},
-        body:JSON.stringify({model:this.model(), max_tokens:800, messages:[{role:"user",content:prompt}]}),
-      });
-      if(!resp.ok) throw {status:resp.status};
-      const d = await resp.json();
-      return d.choices?.[0]?.message?.content || "";
+      return openAICompatibleCall("openai", key, prompt);
     },
   },
   gemini: {
-    name:"Gemini", keyHint:"AIza…",
-    model: ()=> localStorage.getItem("yi_model_gemini") || "gemini-2.0-flash",
+    name:"Gemini", keyHint:"AIza…", defaultModel:"gemini-2.5-flash",
+    defaultBase:"https://generativelanguage.googleapis.com/v1beta",
     async call(key, prompt){
-      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.model()}:generateContent?key=${encodeURIComponent(key)}`,{
+      const base = aiBaseName("gemini").replace(/\/$/,"");
+      const d = await fetchAIJson(`${base}/models/${encodeURIComponent(aiModelName("gemini"))}:generateContent?key=${encodeURIComponent(key)}`,{
         method:"POST",
         headers:{"content-type":"application/json"},
         body:JSON.stringify({contents:[{parts:[{text:prompt}]}],
           generationConfig:{maxOutputTokens:800}}),
       });
-      if(!resp.ok) throw {status:resp.status};
-      const d = await resp.json();
       return (d.candidates?.[0]?.content?.parts||[]).map(p=>p.text||"").join("\n");
     },
+  },
+  kimi: {
+    name:"Kimi", keyHint:"Moonshot API Key", defaultModel:"kimi-k3",
+    defaultBase:"https://api.moonshot.ai/v1",
+    async call(key, prompt){ return openAICompatibleCall("kimi", key, prompt); },
+  },
+  minimax: {
+    name:"MiniMax", keyHint:"MiniMax API Key", defaultModel:"MiniMax-M3",
+    defaultBase:"https://api.minimax.io/v1",
+    async call(key, prompt){ return openAICompatibleCall("minimax", key, prompt); },
+  },
+  custom: {
+    name:"OpenAI 兼容", keyHint:"服务商 API Key（无鉴权可留空）", allowEmptyKey:true,
+    defaultModel:"gpt-4o-mini",
+    defaultBase:"https://api.openai.com/v1",
+    async call(key, prompt){ return openAICompatibleCall("custom", key, prompt); },
   },
 };
 function aiProvider(){
@@ -1990,6 +2062,51 @@ function aiProvider(){
   return /^(localhost|127\.0\.0\.1)$/.test(location.hostname)? "grokcli" : "anthropic";
 }
 function aiKeyName(p){ return "yi_key_"+p; }
+function aiModelName(p){
+  return localStorage.getItem("yi_model_"+p) || AI_PROVIDERS[p].defaultModel || "";
+}
+function aiBaseName(p){
+  return localStorage.getItem("yi_base_"+p) || AI_PROVIDERS[p].defaultBase || "";
+}
+function aiErrorMessage(d, fallback){
+  return d?.error?.message || d?.error || d?.message || d?.base_resp?.status_msg || fallback;
+}
+async function fetchAIJson(url, options, timeout=90000){
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), timeout);
+  try{
+    const resp = await fetch(url,{...options,signal:ctrl.signal});
+    const d = await resp.json().catch(()=>({}));
+    if(!resp.ok) throw {status:resp.status,message:aiErrorMessage(d,`HTTP ${resp.status}`)};
+    return d;
+  }catch(err){
+    if(err?.name==="AbortError") throw {status:"超时",message:"模型响应超过 90 秒"};
+    throw err;
+  }finally{ clearTimeout(timer); }
+}
+function chatEndpoint(base){
+  const clean = base.replace(/\/$/,"");
+  return /\/chat\/completions$/.test(clean)? clean : clean+"/chat/completions";
+}
+async function openAICompatibleCall(p, key, prompt){
+  const body = {
+    model:aiModelName(p),
+    messages:[{role:"user",content:prompt}],
+  };
+  if(p==="minimax"){
+    body.max_completion_tokens = 800;
+    body.thinking = {type:"disabled"};
+  }else{
+    body.max_tokens = 800;
+  }
+  const d = await fetchAIJson(chatEndpoint(aiBaseName(p)),{
+    method:"POST",
+    headers:{"content-type":"application/json",...(key?{"authorization":"Bearer "+key}:{})},
+    body:JSON.stringify(body),
+  });
+  const content = d.choices?.[0]?.message?.content || "";
+  return String(content).replace(/<think>[\s\S]*?<\/think>/gi,"").trim();
+}
 function buildPrompt(){
   const L = LAST, r = L.r;
   const moving = movingLineData(r, L.vals);
@@ -2013,19 +2130,25 @@ async function aiInterpret(){
   const el = document.getElementById("aiOut");
   if(!el || !LAST) return;
   const p = aiProvider(), prov = AI_PROVIDERS[p];
-  let key = prov.requiresKey===false? "" : localStorage.getItem(aiKeyName(p));
-  if(prov.requiresKey!==false && !key){
-    key = prompt(`输入 ${prov.name} API Key（${prov.keyHint}）\n仅保存在本机浏览器，可在「AI 设置」中更换或清除`);
-    if(!key) return;
-    key = key.trim(); localStorage.setItem(aiKeyName(p), key);
+  const key = prov.requiresKey===false? "" : localStorage.getItem(aiKeyName(p));
+  if(prov.requiresKey!==false && !prov.allowEmptyKey && !key){
+    el.innerHTML = `<p class="sub">请先在 AI 设置中填写 ${prov.name} API Key。</p>`;
+    aiSettings();
+    return;
   }
   el.innerHTML = `<p class="sub">凝神叩问，${prov.name} 推演中……</p>`;
   try{
     const result = await prov.call(key, buildPrompt());
     if(!result) throw {status:"空响应"};
+    const meta = typeof result==="string"
+      ? {model:aiModelName(p)}
+      : (result.__meta||{});
+    const sourceLabel = p==="grokcli"? "GROK CLI · LOCAL" : `${prov.name.toUpperCase()} · API`;
+    const duration = meta.durationMs? ` · ${(meta.durationMs/1000).toFixed(1)} 秒` : "";
+    const source = `<div class="aiSource"><b>${esc(sourceLabel)}</b><span>${esc(meta.model||"")}${duration}</span></div>`;
     const html = typeof result==="string"
-      ? result.split(/\n+/).filter(Boolean).map(line=>`<p style="margin-bottom:8px">${esc(line)}</p>`).join("")
-      : `${result.__meta?`<div class="aiSource"><b>GROK CLI · LOCAL</b><span>${esc(result.__meta.model||"")} · ${((result.__meta.durationMs||0)/1000).toFixed(1)} 秒</span></div>`:""}
+      ? source+result.split(/\n+/).filter(Boolean).map(line=>`<p style="margin-bottom:8px">${esc(line)}</p>`).join("")
+      : `${source}
          <p style="margin-bottom:8px"><b>【局势】</b>${esc(result.situation||"")}</p>
          <p style="margin-bottom:8px"><b>【时机】</b>${esc(result.timing||"")}</p>
          <p style="margin-bottom:8px"><b>【行动】</b>${(result.actions||[]).map((x,i)=>`${i+1}. ${esc(x)}`).join("<br>")}</p>
@@ -2036,23 +2159,59 @@ async function aiInterpret(){
   }catch(err){
     if(prov.requiresKey!==false && (err.status===401 || err.status===403)){
       localStorage.removeItem(aiKeyName(p));
-      el.innerHTML = `<p class="sub">${prov.name} API Key 无效，已清除——请再次点击「AI 深解」重新输入。</p>`;
+      el.innerHTML = `<p class="sub">${prov.name} API Key 无效，已清除。请打开 AI 设置重新填写。</p>`;
     } else {
-      el.innerHTML = `<p class="sub">推演未通（${esc(String(err.status||err.message||err))}）。请检查网络或 Key 后重试。</p>`;
+      el.innerHTML = `<p class="sub">推演未通（${esc(String(err.message||err.status||err))}）。请检查网络、模型名称、Base URL 或 Key 后重试。</p>`;
     }
   }
 }
+const aiOverlay = document.getElementById("aiOverlay"),
+      aiProviderSelect = document.getElementById("aiProviderSelect"),
+      aiModelInput = document.getElementById("aiModelInput"),
+      aiBaseInput = document.getElementById("aiBaseInput"),
+      aiKeyInput = document.getElementById("aiKeyInput");
+function syncAISettings(){
+  const p = aiProviderSelect.value, prov = AI_PROVIDERS[p];
+  const local = prov.requiresKey===false;
+  document.querySelectorAll(".aiCloudField").forEach(el=>el.style.display=local?"none":"grid");
+  document.getElementById("aiLocalInfo").classList.toggle("on",local);
+  document.getElementById("aiSecurity").style.display=local?"none":"block";
+  document.getElementById("aiClear").style.display=local?"none":"inline-flex";
+  aiModelInput.value = local? "" : aiModelName(p);
+  aiBaseInput.value = local? "" : aiBaseName(p);
+  aiKeyInput.value = "";
+  aiKeyInput.placeholder = local? "" : (localStorage.getItem(aiKeyName(p))? "已保存，留空则保持不变" : prov.keyHint||"API Key");
+}
 function aiSettings(){
-  const cur = aiProvider();
-  const pick = prompt(`选择 AI 服务（输入序号）：\n1. Grok CLI（本地服务）\n2. Claude（Anthropic）\n3. GPT（OpenAI）\n4. Gemini（Google）\n\n当前：${AI_PROVIDERS[cur].name}；输入 0 清除当前服务已存的 Key`, {grokcli:"1",anthropic:"2",openai:"3",gemini:"4"}[cur]);
-  if(pick==null) return;
-  if(pick.trim()==="0"){ localStorage.removeItem(aiKeyName(cur)); alert("已清除 "+AI_PROVIDERS[cur].name+" 的 Key"); return; }
-  const p = {1:"grokcli",2:"anthropic",3:"openai",4:"gemini"}[pick.trim()];
-  if(!p) return;
+  aiProviderSelect.value = aiProvider();
+  syncAISettings();
+  aiOverlay.classList.add("open");
+  setTimeout(()=>aiProviderSelect.focus(),60);
+}
+function closeAISettings(){ aiOverlay.classList.remove("open"); }
+aiProviderSelect.onchange = syncAISettings;
+document.getElementById("aiSave").onclick = ()=>{
+  const p = aiProviderSelect.value, prov = AI_PROVIDERS[p];
   localStorage.setItem("yi_ai_provider", p);
+  if(prov.requiresKey!==false){
+    const model = aiModelInput.value.trim() || prov.defaultModel;
+    const base = aiBaseInput.value.trim() || prov.defaultBase;
+    localStorage.setItem("yi_model_"+p,model);
+    localStorage.setItem("yi_base_"+p,base);
+    if(aiKeyInput.value.trim()) localStorage.setItem(aiKeyName(p),aiKeyInput.value.trim());
+  }
   const btn = document.getElementById("aiBtn");
   if(btn) btn.textContent = `✦ AI 深解（${AI_PROVIDERS[p].name}）`;
-}
+  closeAISettings();
+};
+document.getElementById("aiClear").onclick = ()=>{
+  const p = aiProviderSelect.value;
+  localStorage.removeItem(aiKeyName(p));
+  aiKeyInput.value="";
+  aiKeyInput.placeholder="已清除，请输入新的 API Key";
+};
+document.getElementById("aiCancel").onclick = closeAISettings;
+aiOverlay.addEventListener("click",e=>{ if(e.target===aiOverlay) closeAISettings(); });
 
 /* —— 海报生成 —— */
 function wrapText(g, text, maxChars){

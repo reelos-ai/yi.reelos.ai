@@ -9,19 +9,27 @@ let localServer = null;
 let localOrigin = "";
 
 function resolveGrokBinary() {
-  const candidates = [
-    process.env.GROK_BIN,
-    join(homedir(), ".local", "bin", "grok"),
-    join(homedir(), ".grok", "bin", "grok"),
-    "/opt/homebrew/bin/grok",
-    "/usr/local/bin/grok",
-  ].filter(Boolean);
-  return candidates.find(existsSync) || "grok";
+  const home = homedir();
+  const candidates = process.platform === "win32"
+    ? [
+        process.env.GROK_BIN,
+        join(home, ".grok", "bin", "grok.exe"),
+        join(home, ".local", "bin", "grok.exe"),
+        process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, "Programs", "grok", "grok.exe"),
+      ]
+    : [
+        process.env.GROK_BIN,
+        join(home, ".local", "bin", "grok"),
+        join(home, ".grok", "bin", "grok"),
+        "/opt/homebrew/bin/grok",
+        "/usr/local/bin/grok",
+      ];
+  return candidates.filter(Boolean).find(existsSync) || (process.platform === "win32" ? "grok.exe" : "grok");
 }
 
 function installMenu() {
-  const template = [
-    {
+  const appMenu = process.platform === "darwin"
+    ? {
       label: app.name,
       submenu: [
         { role: "about", label: `关于${app.name}` },
@@ -32,7 +40,13 @@ function installMenu() {
         { type: "separator" },
         { role: "quit", label: `退出${app.name}` },
       ],
-    },
+    }
+    : {
+      label: "文件",
+      submenu: [{ role: "quit", label: "退出" }],
+    };
+  const template = [
+    appMenu,
     {
       label: "编辑",
       submenu: [
@@ -74,6 +88,10 @@ async function createWindow() {
   localServer = started.server;
   localOrigin = started.url;
 
+  const platformWindowOptions = process.platform === "darwin"
+    ? { titleBarStyle: "hiddenInset", trafficLightPosition: { x: 18, y: 18 } }
+    : { autoHideMenuBar: false };
+
   mainWindow = new BrowserWindow({
     title: "周易宇宙观卦",
     width: 1440,
@@ -82,8 +100,7 @@ async function createWindow() {
     minHeight: 680,
     backgroundColor: "#050b12",
     show: false,
-    titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 18, y: 18 },
+    ...platformWindowOptions,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

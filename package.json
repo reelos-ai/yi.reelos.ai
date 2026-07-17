@@ -1,16 +1,23 @@
 {
-  "name": "yijing-cosmos-mac",
-  "version": "1.0.0",
-  "description": "周易宇宙观卦 macOS 桌面应用",
+  "name": "yijing-cosmos",
+  "version": "1.1.0",
+  "description": "Three.js 周易观卦应用，支持本地 Grok CLI 与自备 AI 模型",
   "author": "ReelOS.AI",
-  "private": true,
+  "license": "MIT",
+  "homepage": "https://yi.reelos.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reelos-ai/yi.reelos.ai.git"
+  },
+  "bugs": "https://github.com/reelos-ai/yi.reelos.ai/issues",
   "type": "module",
   "main": "electron/main.mjs",
   "scripts": {
     "start": "node server.mjs",
     "desktop": "electron .",
     "icon": "swift scripts/generate-icon.swift",
-    "build:mac": "npm run icon && electron-builder --mac dir && npm run sign:mac",
+    "build:mac": "electron-builder --mac dir --arm64 && npm run sign:mac && node scripts/create-dmg.mjs",
+    "build:win": "electron-builder --win nsis --x64",
     "sign:mac": "codesign --force --deep --sign - \"dist/mac-arm64/周易宇宙观卦.app\""
   },
   "devDependencies": {
@@ -28,7 +35,8 @@
       "package.json"
     ],
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "assets"
     },
     "mac": {
       "target": [
@@ -38,8 +46,25 @@
         }
       ],
       "category": "public.app-category.lifestyle",
-      "icon": "build/icon.icns",
+      "icon": "assets/icon.icns",
       "identity": null
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "artifactName": "yijing-cosmos-${version}-windows-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "周易宇宙观卦"
     }
   }
 }

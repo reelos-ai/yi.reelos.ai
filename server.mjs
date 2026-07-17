@@ -11,7 +11,7 @@ const GROK_BIN = process.env.GROK_BIN || "grok";
 const GROK_MODEL = process.env.GROK_MODEL || "grok-4.5";
 const MAX_BODY_BYTES = 16_384;
 const MAX_PROMPT_CHARS = 6_000;
-const TIMEOUT_MS = 60_000;
+const TIMEOUT_MS = 90_000;
 
 const RESPONSE_SCHEMA = JSON.stringify({
   type: "object",
@@ -36,6 +36,16 @@ const SYSTEM_PROMPT = [
   "把卦象当作审视处境与选择的框架，不声称能确定未来。",
   "解读必须紧扣具体问题，给出清晰、现实、可执行的建议。",
 ].join("");
+
+function cleanCliError(stderr) {
+  const lines = String(stderr)
+    .replace(/\u001b\[[0-9;]*m/g, "")
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+  const lastError = [...lines].reverse().find(line => /^(error|fatal):/i.test(line));
+  return (lastError || lines.at(-1) || "Grok 调用失败").replace(/^error:\s*/i, "");
+}
 
 function jsonResponse(res, status, body) {
   const payload = JSON.stringify(body);
@@ -65,7 +75,7 @@ function runGrok(prompt, { grokBin, grokModel, grokCwd }) {
     "--reasoning-effort", "low",
     "--system-prompt-override", SYSTEM_PROMPT,
     "--json-schema", RESPONSE_SCHEMA,
-    "--max-turns", "1",
+    "--max-turns", "3",
     "--no-memory",
     "--no-subagents",
     "--no-plan",
@@ -78,6 +88,7 @@ function runGrok(prompt, { grokBin, grokModel, grokCwd }) {
       cwd: grokCwd,
       env: { ...process.env, NO_COLOR: "1" },
       stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
     });
     let stdout = "";
     let stderr = "";
@@ -90,12 +101,15 @@ function runGrok(prompt, { grokBin, grokModel, grokCwd }) {
     child.stderr.on("data", chunk => { stderr += chunk; });
     child.on("error", error => {
       clearTimeout(timer);
-      reject(error);
+      const message = error.code === "ENOENT"
+        ? "未检测到 Grok CLI，请先安装并登录，或在 AI 设置中选择云端模型"
+        : error.message;
+      reject(new Error(message));
     });
     child.on("close", code => {
       clearTimeout(timer);
       if (code !== 0) {
-        reject(new Error(stderr.trim() || `Grok 退出码 ${code}`));
+        reject(new Error(stderr.trim() ? cleanCliError(stderr) : `Grok 退出码 ${code}`));
         return;
       }
       try {

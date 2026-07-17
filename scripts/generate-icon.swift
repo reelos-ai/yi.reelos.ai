@@ -4,8 +4,10 @@ import Foundation
 let fileManager = FileManager.default
 let root = URL(fileURLWithPath: fileManager.currentDirectoryPath)
 let iconset = root.appendingPathComponent("build/icon.iconset")
+let assets = root.appendingPathComponent("assets")
 try? fileManager.removeItem(at: iconset)
 try fileManager.createDirectory(at: iconset, withIntermediateDirectories: true)
+try fileManager.createDirectory(at: assets, withIntermediateDirectories: true)
 
 func color(_ hex: UInt32, alpha: CGFloat = 1) -> NSColor {
   NSColor(
@@ -113,4 +115,8 @@ iconutil.arguments = ["-c", "icns", iconset.path, "-o", root.appendingPathCompon
 try iconutil.run()
 iconutil.waitUntilExit()
 guard iconutil.terminationStatus == 0 else { throw NSError(domain: "Icon", code: 4) }
-print("Generated build/icon.icns")
+let assetIcns = assets.appendingPathComponent("icon.icns")
+try? fileManager.removeItem(at: assetIcns)
+try fileManager.copyItem(at: root.appendingPathComponent("build/icon.icns"), to: assetIcns)
+try drawIcon(size: 1024, to: assets.appendingPathComponent("icon.png"))
+print("Generated assets/icon.icns and assets/icon.png")
