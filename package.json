@@ -1,0 +1,45 @@
+{
+  "name": "yijing-cosmos-mac",
+  "version": "1.0.0",
+  "description": "周易宇宙观卦 macOS 桌面应用",
+  "author": "ReelOS.AI",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "desktop": "electron .",
+    "icon": "swift scripts/generate-icon.swift",
+    "build:mac": "npm run icon && electron-builder --mac dir && npm run sign:mac",
+    "sign:mac": "codesign --force --deep --sign - \"dist/mac-arm64/周易宇宙观卦.app\""
+  },
+  "devDependencies": {
+    "electron": "43.1.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "ai.reelos.yijing-cosmos",
+    "productName": "周易宇宙观卦",
+    "asar": true,
+    "files": [
+      "index.html",
+      "server.mjs",
+      "electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": ["arm64"]
+        }
+      ],
+      "category": "public.app-category.lifestyle",
+      "icon": "build/icon.icns",
+      "identity": null
+    }
+  }
+}
