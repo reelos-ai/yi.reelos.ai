@@ -16,8 +16,8 @@
     "start": "node server.mjs",
     "desktop": "electron .",
     "icon": "swift scripts/generate-icon.swift",
-    "build:mac": "electron-builder --mac dir --arm64 && npm run sign:mac && node scripts/create-dmg.mjs",
-    "build:win": "electron-builder --win nsis --x64",
+    "build:mac": "electron-builder --mac dir --arm64 --publish never && npm run sign:mac && node scripts/create-dmg.mjs",
+    "build:win": "electron-builder --win nsis --x64 --publish never",
     "sign:mac": "codesign --force --deep --sign - \"dist/mac-arm64/周易宇宙观卦.app\""
   },
   "devDependencies": {
